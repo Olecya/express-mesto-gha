@@ -15,7 +15,11 @@ const createCard = async (req, res) => {
     .then((r) => res.send(r))
     .catch((error) => {
       console.log(error);
-      res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+      if (error.name === 'ValidationError') {
+        res.status(400).send({ message: 'Неверные данные' });
+      } else {
+        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+      }
     });
 };
 const deleteCard = async (req, res) => {
@@ -30,7 +34,7 @@ const deleteCard = async (req, res) => {
           .then(() => res.send({ data: card }));
       } else {
         res.status(404);
-        res.send('Запрашиваемый пользователь не найден');
+        res.send({ message: 'Неверный пользователь' });
       }
     })
     .catch((error) => {
@@ -54,7 +58,7 @@ const putCardLike = async (req, res) => {
       if (card) res.send({ data: card });
       if (!card) {
         res.status(404);
-        res.send('Запрашиваемый пользователь не найден');
+        res.send({ message: 'Запрашиваемая карточка не найдена' });
       }
     })
     .catch((error) => {
@@ -79,7 +83,7 @@ const deleteCardLike = async (req, res) => {
       if (card) res.send({ data: card });
       if (!card) {
         res.status(404);
-        res.send('Запрашиваемый пользователь не найден');
+        res.send({ message: 'Запрашиваемая карточка не найдена' });
       }
     })
     .catch((error) => {

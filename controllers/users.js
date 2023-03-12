@@ -5,7 +5,7 @@ const getUsers = async (req, res) => User.find({})
     res.send(users);
   })
   .catch((error) => {
-    console.log(error);
+    console.log(error.name);
     res.status(500).send({ message: `Произошла ошибка ${req.body}` });
   });
 
@@ -15,8 +15,7 @@ const getUserId = async (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(404);
-        res.send('Запрашиваемый пользователь не найден');
+        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
     })
     .catch((error) => {
