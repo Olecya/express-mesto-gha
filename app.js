@@ -4,7 +4,7 @@ const path = require("path");
 const bodyParser = require("body-parser");
 
 
-const router = require("./routes/app")
+const router = require("./routes/routes")
 const app = express();
 
 // подключаемся к серверу mongo
