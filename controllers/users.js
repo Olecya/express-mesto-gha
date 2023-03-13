@@ -1,4 +1,7 @@
 const User = require('../models/user');
+const {
+  badRequest, notFound, serverError,
+} = require('../utils/constants');
 
 const getUsers = async (req, res) => User.find({})
   .then((users) => {
@@ -6,7 +9,7 @@ const getUsers = async (req, res) => User.find({})
   })
   .catch((error) => {
     console.log(error.name);
-    res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+    res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
   });
 
 const getUserId = async (req, res) => {
@@ -15,14 +18,14 @@ const getUserId = async (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        res.status(notFound).send({ message: 'Запрашиваемый пользователь не найден' });
       }
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        res.status(400).send({ message: 'Неверные данные' });
+        res.status(badRequest).send({ message: 'Неверные данные' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -33,11 +36,17 @@ const createUser = async (req, res) => {
   return User.create({ name, about, avatar })
     .then((r) => res.send(r))
     .catch((error) => {
-      console.log(error.name, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      // не разобралась что и за что отвечает
+      // const err = User.validateSync();
+      // assert.equal(err.errors['name'].message,
+      //   'Must be at least 6, got 2');
+      // assert.equal(error.errors['about'].message, 'Milk is not supported');
+      // console.log(assert.equal(err.errors['name'].message,
+      //   'Имя пользователя: минимум 2 символа, а у вас {VALUE}'));
       if (error.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверные данные' });
+        res.status(badRequest).send({ message: 'Неверные данные' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -50,15 +59,15 @@ const patchUser = async (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(404);
+        res.status(notFound);
         res.send('Запрашиваемый пользователь не найден');
       }
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверные данные' });
+        res.status(badRequest).send({ message: 'Неверные данные' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -70,16 +79,16 @@ const patchUserAvatar = (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(404);
+        res.status(notFound);
         res.send('Запрашиваемый пользователь не найден');
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(400).send({ message: 'Неверные данные' });
+        res.status(badRequest).send({ message: 'Неверные данные' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };

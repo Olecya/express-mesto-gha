@@ -1,4 +1,7 @@
 const Card = require('../models/card');
+const {
+  badRequest, forbidden, notFound, serverError,
+} = require('../utils/constants');
 
 const getCards = async (req, res) => Card.find({})
   .then((cards) => {
@@ -6,7 +9,7 @@ const getCards = async (req, res) => Card.find({})
   })
   .catch((error) => {
     console.log(error);
-    res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+    res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
   });
 
 const createCard = async (req, res) => {
@@ -16,9 +19,9 @@ const createCard = async (req, res) => {
     .catch((error) => {
       console.log(error);
       if (error.name === 'ValidationError') {
-        res.status(400).send({ message: 'Неверные данные' });
+        res.status(badRequest).send({ message: 'Неверные данные' });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -28,21 +31,21 @@ const deleteCard = async (req, res) => {
 
   Card.findById(cardId)
     .then((card) => {
-      console.log(Boolean(card), 'cards.js/controllers 35 line');
       if (Boolean(card) && userId === card.owner.toString()) {
         card.deleteOne({})
-          .then(() => res.send({ data: card }));
+          .then(() => res.send({ data: card }))
+          .catch(() => res.status(serverError).send({ message: 'Произошла ошибка сервера' }));
       } else {
-        res.status(404);
+        res.status(forbidden);
         res.send({ message: 'Неверный пользователь' });
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(400).send({ message: `Неверные данные ${cardId}` });
+        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -51,22 +54,22 @@ const putCardLike = async (req, res) => {
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
-    { $addToSet: { likes: userId } }, // добавить _id в массив, если его там нет
+    { $addToSet: { likes: userId } },
     { new: true },
   )
     .then((card) => {
       if (card) res.send({ data: card });
       if (!card) {
-        res.status(404);
+        res.status(notFound);
         res.send({ message: 'Запрашиваемая карточка не найдена' });
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(400).send({ message: `Неверные данные ${cardId}` });
+        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
@@ -82,16 +85,16 @@ const deleteCardLike = async (req, res) => {
     .then((card) => {
       if (card) res.send({ data: card });
       if (!card) {
-        res.status(404);
+        res.status(notFound);
         res.send({ message: 'Запрашиваемая карточка не найдена' });
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(400).send({ message: `Неверные данные ${cardId}` });
+        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
       } else {
-        res.status(500).send({ message: `Произошла ошибка ${req.body}` });
+        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
       }
     });
 };
