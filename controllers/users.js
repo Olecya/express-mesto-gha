@@ -89,9 +89,13 @@ const createUser = async (req, res, next) => {
           });
         })
         .catch((error) => {
-          // console.log(error);
+          console.log(error);
           if (error.name === 'ValidationError') {
             next(new BadRequestErr('Неверные данные'));
+            return;
+          }
+          if (error.code === 11000) {
+            next(new ConflictErr('Пользователь с такими e-mail уже существует'));
           } else {
             next(new ServerErr(`Произошла ошибка ${req.body}`));
           }

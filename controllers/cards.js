@@ -32,7 +32,7 @@ const deleteCard = async (req, res, next) => {
   Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        next((new BadRequestErr(`Неверные данные ${cardId}`)));
+        next((new NotFoundErr(`Карта не найдена ${cardId}`)));
         return;
       }
       if (Boolean(card) && userId === card.owner.toString()) {
@@ -48,7 +48,7 @@ const deleteCard = async (req, res, next) => {
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        next(new BadRequestErr(`Неверные данные ${cardId}`));
+        next(new NotFoundErr(`Карта не найдена ${cardId}`));
       } else {
         next(new ServerErr('Произошла ошибка сервера'));
       }
