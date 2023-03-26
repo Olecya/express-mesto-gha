@@ -38,7 +38,7 @@ const getUserId = async (req, res, next) => User.findById(idUser(req))
   });
 
 const getUserMe = async (req, res, next) => {
-  User.findById(idUser(req))
+  User.findById(req.user._id)
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
@@ -86,9 +86,10 @@ const createUser = async (req, res, next) => {
 };
 
 const patchUser = async (req, res, next) => {
+  const userId = req.user._id;
   const { name, about } = req.body;
 
-  User.findByIdAndUpdate(idUser(req), { name, about }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
@@ -104,12 +105,13 @@ const patchUser = async (req, res, next) => {
     });
 };
 const patchUserAvatar = (req, res, next) => {
+  const userId = req.user._id;
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(idUser(req), { avatar }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(userId, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (user) res.send(user);
-      if (!user) {
+      else {
         next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
