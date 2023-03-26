@@ -6,6 +6,7 @@ module.exports = (req, res, next) => {
   const { cookie } = req.headers;
   if (!cookie || !cookie.startsWith('jwt=')) {
     next(new UnauthorizedErr('Необходима авторизация'));
+    return;
   }
   const token = cookie.replace('jwt=', '');
   let payload;
@@ -13,6 +14,7 @@ module.exports = (req, res, next) => {
     payload = jwt.verify(token, JWT_KEY_SECRET);
   } catch (err) {
     next(new UnauthorizedErr('Необходима авторизация'));
+    return;
   }
   req.user = payload; // записываем пейлоуд в объект запроса
   next(); // пропускаем запрос дальше

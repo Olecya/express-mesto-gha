@@ -1,5 +1,5 @@
 const express = require('express');
-const { celebrate, Joi, Segments } = require('celebrate');
+const { celebrate, Joi } = require('celebrate');
 
 const { urlValidator } = require('../utils/urlValidator');
 
@@ -10,11 +10,7 @@ const {
 } = require('../controllers/users');
 
 routerUsers.get('/', getUsers);
-routerUsers.get('/me', celebrate({
-  [Segments.COOKIES]: Joi.object().keys({
-    jwt: Joi.string().required(),
-  }),
-}), getUserMe);
+routerUsers.get('/me', getUserMe);
 routerUsers.get('/:userId', celebrate({
   params: Joi.object().keys({
     userId: Joi.string().required().length(24).hex(),

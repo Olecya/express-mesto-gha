@@ -7,54 +7,38 @@ const BadRequestErr = require('../errors/BadRequestErr');
 const UnauthorizedErr = require('../errors/UnauthorizedErr');
 const NotFoundErr = require('../errors/NotFoundErr');
 const ConflictErr = require('../errors/ConflictErr');
-const ServerErr = require('../errors/ServerErr');
+
+const idUser = (r) => {
+  const { userId } = r.params;
+  return userId;
+};
 
 const getUsers = async (req, res, next) => User.find({})
   .then((users) => {
     res.send(users);
   })
   .catch(() => {
-    next(new ServerErr(`Произошла ошибка ${req.body}`));
+    next(new Error(`Произошла ошибка ${req.body}`));
   });
 
-const getUserId = async (req, res, next) => {
-  const { userId } = req.params;
-  return User.findById(userId)
-    .then((user) => {
-      if (user) res.send(user);
-      if (!user) {
-        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
-      }
-    })
-    .catch((error) => {
-      console.log(error.statusCode);
-      if (error.code === 11000) {
-        next(new ConflictErr('Пользователь с такими e-mail уже существует'));
-        return;
-      }
-      if (error.name === 'CastError') {
-        next(new BadRequestErr('Неверные данные'));
-      } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`));
-      }
-    });
-};
+const getUserId = async (req, res, next) => User.findById(idUser(req))
+  .then((user) => {
+    if (user) {
+      res.send(user);
+    } else {
+      next(new NotFoundErr('Запрашиваемый пользователь не найден'));
+    }
+  })
+  .catch((error) => {
+    if (error.name === 'CastError') {
+      next(new BadRequestErr('Неверные данные'));
+    } else {
+      next(new Error(`Произошла ошибка ${req.body}`));
+    }
+  });
 
 const getUserMe = async (req, res, next) => {
-  const { cookie } = req.headers;
-  if (!cookie || !cookie.startsWith('jwt=')) {
-    next(new UnauthorizedErr('Необходима авторизация'));
-    return;
-  }
-  const token = cookie.replace('jwt=', '');
-  let userId;
-  try {
-    userId = jwt.verify(token, JWT_KEY_SECRET)._id;
-  } catch (err) {
-    next(new UnauthorizedErr('Необходима авторизация'));
-    return;
-  }
-  User.findById(userId)
+  User.findById(idUser(req))
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
@@ -65,7 +49,7 @@ const getUserMe = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`));
+        next(new Error(`Произошла ошибка ${req.body}`));
       }
     });
 };
@@ -74,7 +58,6 @@ const createUser = async (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  console.log(req.body);
   return bcrypt.hash(password, 10)
     .then((hash) => {
       User.create({
@@ -89,7 +72,6 @@ const createUser = async (req, res, next) => {
           });
         })
         .catch((error) => {
-          console.log(error);
           if (error.name === 'ValidationError') {
             next(new BadRequestErr('Неверные данные'));
             return;
@@ -97,17 +79,16 @@ const createUser = async (req, res, next) => {
           if (error.code === 11000) {
             next(new ConflictErr('Пользователь с такими e-mail уже существует'));
           } else {
-            next(new ServerErr(`Произошла ошибка ${req.body}`));
+            next(new Error(`Произошла ошибка ${req.body}`));
           }
         });
     });
 };
 
 const patchUser = async (req, res, next) => {
-  const userId = req.user._id;
   const { name, about } = req.body;
 
-  User.findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(idUser(req), { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
@@ -118,15 +99,14 @@ const patchUser = async (req, res, next) => {
       if (error.name === 'ValidationError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`));
+        next(new Error(`Произошла ошибка ${req.body}`));
       }
     });
 };
 const patchUserAvatar = (req, res, next) => {
-  const userId = req.user._id;
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(userId, { avatar }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(idUser(req), { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
@@ -134,11 +114,10 @@ const patchUserAvatar = (req, res, next) => {
       }
     })
     .catch((error) => {
-      console.log(error);
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`));
+        next(new Error(`Произошла ошибка ${req.body}`));
       }
     });
 };
@@ -148,8 +127,6 @@ const login = (req, res, next) => {
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_KEY_SECRET, { expiresIn: '7d' });
-      console.log(token);
-      // res.send({ token });
       res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 }).send({ jwt: token });
     })
     .catch(() => {

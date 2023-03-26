@@ -3,26 +3,26 @@ const Card = require('../models/card');
 const BadRequestErr = require('../errors/BadRequestErr');
 const ForbiddenErr = require('../errors/ForbiddenErr');
 const NotFoundErr = require('../errors/NotFoundErr');
-const ServerErr = require('../errors/ServerErr');
 
 const getCards = async (req, res, next) => Card.find({})
+  .populate(['owner', 'likes'])
   .then((cards) => {
     res.send(cards);
   })
   .catch(() => {
-    next(new ServerErr(`Произошла ошибка ${req.body}`));
+    next(new Error(`Произошла ошибка ${req.body}`));
   });
 
 const createCard = async (req, res, next) => {
   const owner = req.user._id;
   const { name, link } = req.body;
   return Card.create({ name, link, owner })
-    .then((r) => res.send(r))
+    .then((r) => res.status(201).send(r))
     .catch((error) => {
       if (error.name === 'ValidationError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr('Произошла ошибка сервера'));
+        next(new Error('Произошла ошибка сервера'));
       }
     });
 };
@@ -35,22 +35,21 @@ const deleteCard = async (req, res, next) => {
         next((new NotFoundErr(`Карта не найдена ${cardId}`)));
         return;
       }
-      if (Boolean(card) && userId === card.owner.toString()) {
+      if (userId === card.owner.toString()) {
         card.deleteOne({})
           .then(() => {
             res.send({ data: card });
           })
-          .catch(() => next(new ServerErr('Произошла ошибка сервера')));
+          .catch(() => next(new Error('Произошла ошибка сервера')));
       } else {
         next(new ForbiddenErr('Неверный пользователь'));
       }
     })
     .catch((error) => {
-      console.log(error);
       if (error.name === 'CastError') {
         next(new NotFoundErr(`Карта не найдена ${cardId}`));
       } else {
-        next(new ServerErr('Произошла ошибка сервера'));
+        next(new Error('Произошла ошибка сервера'));
       }
     });
 };
@@ -62,6 +61,7 @@ const putCardLike = async (req, res, next) => {
     { $addToSet: { likes: userId } },
     { new: true },
   )
+    .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
         next(new NotFoundErr('Запрашиваемая карточка не найдена'));
@@ -70,11 +70,10 @@ const putCardLike = async (req, res, next) => {
       if (card) res.send({ data: card });
     })
     .catch((error) => {
-      console.log(error);
       if (error.name === 'CastError') {
         next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new ServerErr('Произошла ошибка сервера'));
+        next(new Error('Произошла ошибка сервера'));
       }
     });
 };
@@ -94,11 +93,10 @@ const deleteCardLike = async (req, res, next) => {
       }
     })
     .catch((error) => {
-      console.log(error);
       if (error.name === 'CastError') {
         next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new ServerErr('Произошла ошибка сервера'));
+        next(new Error('Произошла ошибка сервера'));
       }
     });
 };
