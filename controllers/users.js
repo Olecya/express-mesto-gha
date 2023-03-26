@@ -5,7 +5,6 @@ const User = require('../models/user');
 const { JWT_KEY_SECRET } = require('../utils/config');
 const BadRequestErr = require('../errors/BadRequestErr');
 const UnauthorizedErr = require('../errors/UnauthorizedErr');
-const ForbiddenErr = require('../errors/ForbiddenErr');
 const NotFoundErr = require('../errors/NotFoundErr');
 const ConflictErr = require('../errors/ConflictErr');
 const ServerErr = require('../errors/ServerErr');
@@ -15,7 +14,7 @@ const getUsers = async (req, res, next) => User.find({})
     res.send(users);
   })
   .catch(() => {
-    next(new ServerErr(`Произошла ошибка ${req.body}`))
+    next(new ServerErr(`Произошла ошибка ${req.body}`));
   });
 
 const getUserId = async (req, res, next) => {
@@ -35,7 +34,7 @@ const getUserId = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`))
+        next(new ServerErr(`Произошла ошибка ${req.body}`));
       }
     });
 };
@@ -43,12 +42,12 @@ const getUserId = async (req, res, next) => {
 const getUserMe = async (req, res, next) => {
   const { cookie } = req.headers;
   if (!cookie || !cookie.startsWith('jwt=')) {
-    return handleAuthError(res);
+    next(new UnauthorizedErr('Необходима авторизация'));
   }
   const token = cookie.replace('jwt=', '');
   let userId;
   try {
-    const userId = jwt.verify(token, JWT_KEY_SECRET)._id;
+    userId = jwt.verify(token, JWT_KEY_SECRET)._id;
   } catch (err) {
     next(new UnauthorizedErr('Необходима авторизация'));
   }
@@ -63,29 +62,37 @@ const getUserMe = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`))
+        next(new ServerErr(`Произошла ошибка ${req.body}`));
       }
     });
-}
+};
 
 const createUser = async (req, res, next) => {
-  const { name, about, avatar, email, password } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   console.log(req.body);
   return bcrypt.hash(password, 10)
     .then((hash) => {
-      User.create({ name: name, about: about, avatar: avatar, email: email, password: hash })
+      User.create({
+        name, about, avatar, email, password: hash,
+      })
         .then((user) => {
-          const { _id, name, about, avatar, email } = user;
-          res.status(201).send({ user: { _id, name, about, avatar, email } });
+          const { _id } = user;
+          res.status(201).send({
+            user: {
+              _id, name, about, avatar, email,
+            },
+          });
         })
         .catch((error) => {
           // console.log(error);
           if (error.name === 'ValidationError') {
             next(new BadRequestErr('Неверные данные'));
           } else {
-            next(new ServerErr(`Произошла ошибка ${req.body}`))
+            next(new ServerErr(`Произошла ошибка ${req.body}`));
           }
-        })
+        });
     });
 };
 
@@ -104,7 +111,7 @@ const patchUser = async (req, res, next) => {
       if (error.name === 'ValidationError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`))
+        next(new ServerErr(`Произошла ошибка ${req.body}`));
       }
     });
 };
@@ -124,7 +131,7 @@ const patchUserAvatar = (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка ${req.body}`))
+        next(new ServerErr(`Произошла ошибка ${req.body}`));
       }
     });
 };
@@ -138,11 +145,11 @@ const login = (req, res, next) => {
       // res.send({ token });
       res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 }).send({ jwt: token });
     })
-    .catch((err) => {
+    .catch(() => {
       // ошибка аутентификации
       next(new UnauthorizedErr('Необходима авторизация'));
     });
-}
+};
 module.exports = {
-  createUser, getUsers, getUserId, patchUser, patchUserAvatar, login, getUserMe
+  createUser, getUsers, getUserId, patchUser, patchUserAvatar, login, getUserMe,
 };

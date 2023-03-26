@@ -1,7 +1,7 @@
 const express = require('express');
 const { celebrate, Joi } = require('celebrate');
 
-const { urlValidator } = require('../utils/urlValidator')
+const { urlValidator } = require('../utils/urlValidator');
 
 const cardRouter = express.Router();
 

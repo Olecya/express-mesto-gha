@@ -1,8 +1,7 @@
 const express = require('express');
 const { celebrate, Joi, Segments } = require('celebrate');
 
-const { urlValidator } = require('../utils/urlValidator')
-
+const { urlValidator } = require('../utils/urlValidator');
 
 const routerUsers = express.Router();
 
@@ -11,7 +10,7 @@ const {
 } = require('../controllers/users');
 
 routerUsers.get('/', getUsers);
-routerUsers.get('/me',  celebrate({
+routerUsers.get('/me', celebrate({
   [Segments.COOKIES]: Joi.object().keys({
     jwt: Joi.string().required(),
   }),
@@ -29,7 +28,7 @@ routerUsers.patch('/me', celebrate({
   }),
 }), patchUser);
 
-routerUsers.patch('/me/avatar',celebrate({
+routerUsers.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
     avatar: Joi.string().required().min(2).custom(urlValidator),
   }),

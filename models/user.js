@@ -1,4 +1,4 @@
-const validator = require('validator');
+const validatorUser = require('validator');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 // Опишем схему:
@@ -22,17 +22,17 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     unique: true,
-    required: [true,],
+    required: [true],
     validate: {
-      validator: (value) => validator.isEmail(value),
-      massage: 'Invalid email'
-    }
+      validator: (value) => validatorUser.isEmail(value),
+      massage: 'Invalid email',
+    },
   },
   password: {
     type: String,
     required: true,
-    select: false
-  }
+    select: false,
+  },
 }, {
   versionKey: false, // You should be aware of the outcome after set to false
 });

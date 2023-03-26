@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 
 const router = require('./routes/routes');
-const { serverError } = require('./utils/constants');
+
 const { PORT = 3000 } = process.env;
 const app = express();
 
@@ -23,9 +23,9 @@ app.use('/', router);
 app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
-  res.status(statusCode).send({ message: message });
+  res.status(statusCode).send({ message });
   next();
-})
+});
 
 app.listen(PORT, () => {
   // Если всё работает, консоль покажет, какой порт приложение слушает

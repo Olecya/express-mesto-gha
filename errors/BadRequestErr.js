@@ -1,10 +1,10 @@
-const { badRequest } = require("../utils/constants");
+const { badRequest } = require('../utils/constants');
 
 class BadRequestErr extends Error {
-    constructor(message) {
-        super(message);
-        this.statusCode = badRequest;
-    }
+  constructor(message) {
+    super(message);
+    this.statusCode = badRequest;
+  }
 }
 
-module.exports = BadRequestErr; 
+module.exports = BadRequestErr;

@@ -1,13 +1,12 @@
 const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
 
-const { urlValidator } = require('../utils/urlValidator')
-const { notFound } = require('../utils/constants');
+const { urlValidator } = require('../utils/urlValidator');
 const userRouter = require('./users');
 const cardRouter = require('./cards');
 const { login, createUser } = require('../controllers/users');
 const auth = require('../middlewares/auth');
-const NotFoundErr = require('../errors/NotFoundErr')
+const NotFoundErr = require('../errors/NotFoundErr');
 
 router.post('/signin', celebrate({
   body: Joi.object().keys({
@@ -30,6 +29,6 @@ router.post('/signup', celebrate({
 router.use('/users', auth, userRouter);
 router.use('/cards', auth, cardRouter);
 router.use('*', (req, res, next) => {
-  next(new NotFoundErr('404 Not Found'))
+  next(new NotFoundErr('404 Not Found'));
 });
 module.exports = router;

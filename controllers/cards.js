@@ -1,34 +1,32 @@
 const Card = require('../models/card');
 
 const BadRequestErr = require('../errors/BadRequestErr');
-const UnauthorizedErr = require('../errors/UnauthorizedErr');
 const ForbiddenErr = require('../errors/ForbiddenErr');
 const NotFoundErr = require('../errors/NotFoundErr');
-const ConflictErr = require('../errors/ConflictErr');
 const ServerErr = require('../errors/ServerErr');
 
-const getCards = async (req, res) => Card.find({})
+const getCards = async (req, res, next) => Card.find({})
   .then((cards) => {
     res.send(cards);
   })
   .catch(() => {
-    next(new ServerErr(`Произошла ошибка ${req.body}`))
+    next(new ServerErr(`Произошла ошибка ${req.body}`));
   });
 
-const createCard = async (req, res) => {
-  const owner = req.user._id
-  const { name, link, } = req.body;
+const createCard = async (req, res, next) => {
+  const owner = req.user._id;
+  const { name, link } = req.body;
   return Card.create({ name, link, owner })
     .then((r) => res.send(r))
     .catch((error) => {
       if (error.name === 'ValidationError') {
         next(new BadRequestErr('Неверные данные'));
       } else {
-        next(new ServerErr(`Произошла ошибка сервера`));
+        next(new ServerErr('Произошла ошибка сервера'));
       }
     });
 };
-const deleteCard = async (req, res) => {
+const deleteCard = async (req, res, next) => {
   const userId = req.user._id;
   const { cardId } = req.params;
   Card.findById(cardId)
@@ -36,21 +34,21 @@ const deleteCard = async (req, res) => {
       if (Boolean(card) && userId === card.owner.toString()) {
         card.deleteOne({})
           .then(() => res.send({ data: card }))
-          .catch(() => next(new ServerErr(`Произошла ошибка сервера`)));
+          .catch(() => next(new ServerErr('Произошла ошибка сервера')));
       } else {
-        next(new ForbiddenErr('Неверный пользователь'))
+        next(new ForbiddenErr('Неверный пользователь'));
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        next(new BadRequestErr(`Неверные данные ${cardId}`))
+        next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new ServerErr(`Произошла ошибка сервера`));
+        next(new ServerErr('Произошла ошибка сервера'));
       }
     });
 };
-const putCardLike = async (req, res) => {
+const putCardLike = async (req, res, next) => {
   const userId = req.user._id;
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
@@ -67,14 +65,14 @@ const putCardLike = async (req, res) => {
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        next(new BadRequestErr(`Неверные данные ${cardId}`))
+        next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new ServerErr(`Произошла ошибка сервера`));
+        next(new ServerErr('Произошла ошибка сервера'));
       }
     });
 };
 
-const deleteCardLike = async (req, res) => {
+const deleteCardLike = async (req, res, next) => {
   const userId = req.user._id;
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
@@ -91,9 +89,9 @@ const deleteCardLike = async (req, res) => {
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        next(new BadRequestErr(`Неверные данные ${cardId}`))
+        next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new ServerErr(`Произошла ошибка сервера`));
+        next(new ServerErr('Произошла ошибка сервера'));
       }
     });
 };
