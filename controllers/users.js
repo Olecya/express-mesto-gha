@@ -1,57 +1,95 @@
-const User = require('../models/user');
-const {
-  badRequest, notFound, serverError,
-} = require('../utils/constants');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-const getUsers = async (req, res) => User.find({})
+const User = require('../models/user');
+const { JWT_KEY_SECRET } = require('../utils/config');
+const BadRequestErr = require('../errors/BadRequestErr');
+const UnauthorizedErr = require('../errors/UnauthorizedErr');
+const ForbiddenErr = require('../errors/ForbiddenErr');
+const NotFoundErr = require('../errors/NotFoundErr');
+const ConflictErr = require('../errors/ConflictErr');
+const ServerErr = require('../errors/ServerErr');
+
+const getUsers = async (req, res, next) => User.find({})
   .then((users) => {
     res.send(users);
   })
-  .catch((error) => {
-    console.log(error.name);
-    res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+  .catch(() => {
+    next(new ServerErr(`Произошла ошибка ${req.body}`))
   });
 
-const getUserId = async (req, res) => {
+const getUserId = async (req, res, next) => {
   const { userId } = req.params;
   return User.findById(userId)
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(notFound).send({ message: 'Запрашиваемый пользователь не найден' });
+        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
+      }
+    })
+    .catch((error) => {
+      console.log(error.statusCode);
+      if (error.code === 11000) {
+        next(new ConflictErr('Пользователь с такими e-mail уже существует'));
+      }
+      if (error.name === 'CastError') {
+        next(new BadRequestErr('Неверные данные'));
+      } else {
+        next(new ServerErr(`Произошла ошибка ${req.body}`))
+      }
+    });
+};
+
+const getUserMe = async (req, res, next) => {
+  const { cookie } = req.headers;
+  if (!cookie || !cookie.startsWith('jwt=')) {
+    return handleAuthError(res);
+  }
+  const token = cookie.replace('jwt=', '');
+  let userId;
+  try {
+    const userId = jwt.verify(token, JWT_KEY_SECRET)._id;
+  } catch (err) {
+    next(new UnauthorizedErr('Необходима авторизация'));
+  }
+  return User.findById(userId)
+    .then((user) => {
+      if (user) res.send(user);
+      if (!user) {
+        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        res.status(badRequest).send({ message: 'Неверные данные' });
+        next(new BadRequestErr('Неверные данные'));
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка ${req.body}`))
       }
     });
-};
+}
 
-const createUser = async (req, res) => {
-  const { name, about, avatar } = req.body;
+const createUser = async (req, res, next) => {
+  const { name, about, avatar, email, password } = req.body;
   console.log(req.body);
-  return User.create({ name, about, avatar })
-    .then((r) => res.send(r))
-    .catch((error) => {
-      // не разобралась что и за что отвечает
-      // const err = User.validateSync();
-      // assert.equal(err.errors['name'].message,
-      //   'Must be at least 6, got 2');
-      // assert.equal(error.errors['about'].message, 'Milk is not supported');
-      // console.log(assert.equal(err.errors['name'].message,
-      //   'Имя пользователя: минимум 2 символа, а у вас {VALUE}'));
-      if (error.name === 'ValidationError') {
-        res.status(badRequest).send({ message: 'Неверные данные' });
-      } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
-      }
+  return bcrypt.hash(password, 10)
+    .then((hash) => {
+      User.create({ name: name, about: about, avatar: avatar, email: email, password: hash })
+        .then((user) => {
+          const { _id, name, about, avatar, email } = user;
+          res.status(201).send({ user: { _id, name, about, avatar, email } });
+        })
+        .catch((error) => {
+          // console.log(error);
+          if (error.name === 'ValidationError') {
+            next(new BadRequestErr('Неверные данные'));
+          } else {
+            next(new ServerErr(`Произошла ошибка ${req.body}`))
+          }
+        })
     });
 };
 
-const patchUser = async (req, res) => {
+const patchUser = async (req, res, next) => {
   const userId = req.user._id;
   const { name, about } = req.body;
 
@@ -59,19 +97,18 @@ const patchUser = async (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(notFound);
-        res.send('Запрашиваемый пользователь не найден');
+        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
-        res.status(badRequest).send({ message: 'Неверные данные' });
+        next(new BadRequestErr('Неверные данные'));
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка ${req.body}`))
       }
     });
 };
-const patchUserAvatar = (req, res) => {
+const patchUserAvatar = (req, res, next) => {
   const userId = req.user._id;
   const { avatar } = req.body;
 
@@ -79,20 +116,33 @@ const patchUserAvatar = (req, res) => {
     .then((user) => {
       if (user) res.send(user);
       if (!user) {
-        res.status(notFound);
-        res.send('Запрашиваемый пользователь не найден');
+        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(badRequest).send({ message: 'Неверные данные' });
+        next(new BadRequestErr('Неверные данные'));
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка ${req.body}`))
       }
     });
 };
 
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_KEY_SECRET, { expiresIn: '7d' });
+      console.log(token);
+      // res.send({ token });
+      res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 }).send({ jwt: token });
+    })
+    .catch((err) => {
+      // ошибка аутентификации
+      next(new UnauthorizedErr('Необходима авторизация'));
+    });
+}
 module.exports = {
-  createUser, getUsers, getUserId, patchUser, patchUserAvatar,
+  createUser, getUsers, getUserId, patchUser, patchUserAvatar, login, getUserMe
 };

@@ -1,51 +1,52 @@
 const Card = require('../models/card');
-const {
-  badRequest, forbidden, notFound, serverError,
-} = require('../utils/constants');
+
+const BadRequestErr = require('../errors/BadRequestErr');
+const UnauthorizedErr = require('../errors/UnauthorizedErr');
+const ForbiddenErr = require('../errors/ForbiddenErr');
+const NotFoundErr = require('../errors/NotFoundErr');
+const ConflictErr = require('../errors/ConflictErr');
+const ServerErr = require('../errors/ServerErr');
 
 const getCards = async (req, res) => Card.find({})
   .then((cards) => {
     res.send(cards);
   })
-  .catch((error) => {
-    console.log(error);
-    res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+  .catch(() => {
+    next(new ServerErr(`Произошла ошибка ${req.body}`))
   });
 
 const createCard = async (req, res) => {
-  const { name, link, owner = req.user._id } = req.body;
+  const owner = req.user._id
+  const { name, link, } = req.body;
   return Card.create({ name, link, owner })
     .then((r) => res.send(r))
     .catch((error) => {
-      console.log(error);
       if (error.name === 'ValidationError') {
-        res.status(badRequest).send({ message: 'Неверные данные' });
+        next(new BadRequestErr('Неверные данные'));
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка сервера`));
       }
     });
 };
 const deleteCard = async (req, res) => {
   const userId = req.user._id;
   const { cardId } = req.params;
-
   Card.findById(cardId)
     .then((card) => {
       if (Boolean(card) && userId === card.owner.toString()) {
         card.deleteOne({})
           .then(() => res.send({ data: card }))
-          .catch(() => res.status(serverError).send({ message: 'Произошла ошибка сервера' }));
+          .catch(() => next(new ServerErr(`Произошла ошибка сервера`)));
       } else {
-        res.status(forbidden);
-        res.send({ message: 'Неверный пользователь' });
+        next(new ForbiddenErr('Неверный пользователь'))
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
+        next(new BadRequestErr(`Неверные данные ${cardId}`))
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка сервера`));
       }
     });
 };
@@ -60,16 +61,15 @@ const putCardLike = async (req, res) => {
     .then((card) => {
       if (card) res.send({ data: card });
       if (!card) {
-        res.status(notFound);
-        res.send({ message: 'Запрашиваемая карточка не найдена' });
+        next(new NotFoundErr('Запрашиваемая карточка не найдена'));
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
+        next(new BadRequestErr(`Неверные данные ${cardId}`))
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка сервера`));
       }
     });
 };
@@ -85,16 +85,15 @@ const deleteCardLike = async (req, res) => {
     .then((card) => {
       if (card) res.send({ data: card });
       if (!card) {
-        res.status(notFound);
-        res.send({ message: 'Запрашиваемая карточка не найдена' });
+        next(new NotFoundErr('Запрашиваемая карточка не найдена'));
       }
     })
     .catch((error) => {
       console.log(error);
       if (error.name === 'CastError') {
-        res.status(badRequest).send({ message: `Неверные данные ${cardId}` });
+        next(new BadRequestErr(`Неверные данные ${cardId}`))
       } else {
-        res.status(serverError).send({ message: `Произошла ошибка ${req.body}` });
+        next(new ServerErr(`Произошла ошибка сервера`));
       }
     });
 };
