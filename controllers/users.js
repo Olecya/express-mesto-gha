@@ -30,6 +30,7 @@ const getUserId = async (req, res, next) => {
       console.log(error.statusCode);
       if (error.code === 11000) {
         next(new ConflictErr('Пользователь с такими e-mail уже существует'));
+        return;
       }
       if (error.name === 'CastError') {
         next(new BadRequestErr('Неверные данные'));
@@ -43,6 +44,7 @@ const getUserMe = async (req, res, next) => {
   const { cookie } = req.headers;
   if (!cookie || !cookie.startsWith('jwt=')) {
     next(new UnauthorizedErr('Необходима авторизация'));
+    return;
   }
   const token = cookie.replace('jwt=', '');
   let userId;
@@ -50,8 +52,9 @@ const getUserMe = async (req, res, next) => {
     userId = jwt.verify(token, JWT_KEY_SECRET)._id;
   } catch (err) {
     next(new UnauthorizedErr('Необходима авторизация'));
+    return;
   }
-  return User.findById(userId)
+  User.findById(userId)
     .then((user) => {
       if (user) res.send(user);
       if (!user) {

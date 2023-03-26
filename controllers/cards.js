@@ -31,9 +31,15 @@ const deleteCard = async (req, res, next) => {
   const { cardId } = req.params;
   Card.findById(cardId)
     .then((card) => {
+      if (!card) {
+        next((new BadRequestErr(`Неверные данные ${cardId}`)));
+        return;
+      }
       if (Boolean(card) && userId === card.owner.toString()) {
         card.deleteOne({})
-          .then(() => res.send({ data: card }))
+          .then(() => {
+            res.send({ data: card });
+          })
           .catch(() => next(new ServerErr('Произошла ошибка сервера')));
       } else {
         next(new ForbiddenErr('Неверный пользователь'));
@@ -57,10 +63,11 @@ const putCardLike = async (req, res, next) => {
     { new: true },
   )
     .then((card) => {
-      if (card) res.send({ data: card });
       if (!card) {
         next(new NotFoundErr('Запрашиваемая карточка не найдена'));
+        return;
       }
+      if (card) res.send({ data: card });
     })
     .catch((error) => {
       console.log(error);

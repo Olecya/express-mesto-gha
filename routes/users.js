@@ -24,6 +24,7 @@ routerUsers.get('/:userId', celebrate({
 routerUsers.patch('/me', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
+    about: Joi.string().required().min(2).max(30),
     link: Joi.string().required().min(2).custom(urlValidator),
   }),
 }), patchUser);
