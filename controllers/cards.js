@@ -9,22 +9,21 @@ const getCards = async (req, res, next) => Card.find({})
   .then((cards) => {
     res.send(cards);
   })
-  .catch(() => {
-    next(new Error(`Произошла ошибка ${req.body}`));
-  });
+  .catch((e) => next(e));
 
 const createCard = async (req, res, next) => {
   const owner = req.user._id;
   const { name, link } = req.body;
   return Card.create({ name, link, owner })
     .then((r) => res.status(201).send(r))
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        next(new BadRequestErr('Неверные данные'));
-      } else {
-        next(new Error('Произошла ошибка сервера'));
-      }
-    });
+    .catch((e) => next(e));
+  // (error) => {
+  //   if (error.name === 'ValidationError') {
+  //     next(new BadRequestErr('Неверные данные'));
+  //   } else {
+  //     next(new Error('Произошла ошибка сервера'));
+  //   }
+  // }
 };
 const deleteCard = async (req, res, next) => {
   const userId = req.user._id;
@@ -40,7 +39,7 @@ const deleteCard = async (req, res, next) => {
           .then(() => {
             res.send({ data: card });
           })
-          .catch(() => next(new Error('Произошла ошибка сервера')));
+          .catch((e) => next(e)); // () => next(new Error('Произошла ошибка сервера'))
       } else {
         next(new ForbiddenErr('Неверный пользователь'));
       }
@@ -49,7 +48,7 @@ const deleteCard = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new NotFoundErr(`Карта не найдена ${cardId}`));
       } else {
-        next(new Error('Произошла ошибка сервера'));
+        next(error);
       }
     });
 };
@@ -73,7 +72,7 @@ const putCardLike = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new Error('Произошла ошибка сервера'));
+        next(error);
       }
     });
 };
@@ -83,7 +82,7 @@ const deleteCardLike = async (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
-    { $pull: { likes: userId } }, // убрать _id из массива
+    { $pull: { likes: userId } },
     { new: true },
   )
     .then((card) => {
@@ -96,7 +95,8 @@ const deleteCardLike = async (req, res, next) => {
       if (error.name === 'CastError') {
         next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
-        next(new Error('Произошла ошибка сервера'));
+        next(error);
+        // next(new Error('Произошла ошибка сервера'));
       }
     });
 };

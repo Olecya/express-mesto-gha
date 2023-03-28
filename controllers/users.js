@@ -3,10 +3,10 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
 const { JWT_KEY_SECRET } = require('../utils/config');
-const BadRequestErr = require('../errors/BadRequestErr');
-const UnauthorizedErr = require('../errors/UnauthorizedErr');
+// const BadRequestErr = require('../errors/BadRequestErr');
+// const UnauthorizedErr = require('../errors/UnauthorizedErr');
 const NotFoundErr = require('../errors/NotFoundErr');
-const ConflictErr = require('../errors/ConflictErr');
+// const ConflictErr = require('../errors/ConflictErr');
 
 const idUser = (r) => {
   const { userId } = r.params;
@@ -17,9 +17,7 @@ const getUsers = async (req, res, next) => User.find({})
   .then((users) => {
     res.send(users);
   })
-  .catch(() => {
-    next(new Error(`Произошла ошибка ${req.body}`));
-  });
+  .catch((e) => next(e));
 
 const getUserId = async (req, res, next) => User.findById(idUser(req))
   .then((user) => {
@@ -29,13 +27,14 @@ const getUserId = async (req, res, next) => User.findById(idUser(req))
       next(new NotFoundErr('Запрашиваемый пользователь не найден'));
     }
   })
-  .catch((error) => {
-    if (error.name === 'CastError') {
-      next(new BadRequestErr('Неверные данные'));
-    } else {
-      next(new Error(`Произошла ошибка ${req.body}`));
-    }
-  });
+  .catch((e) => next(e));
+// (error) => {
+//   if (error.name === 'CastError') {
+//     next(new BadRequestErr('Неверные данные'));
+//   } else {
+//     next(error);
+//   }
+// }
 
 const getUserMe = async (req, res, next) => {
   User.findById(req.user._id)
@@ -45,12 +44,13 @@ const getUserMe = async (req, res, next) => {
         next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        next(new BadRequestErr('Неверные данные'));
-      } else {
-        next(new Error(`Произошла ошибка ${req.body}`));
-      }
+    .catch((err) => {
+      next(err);
+      // if (error.name === 'CastError') {
+      //   next(new BadRequestErr('Неверные данные'));
+      // } else {
+      //   next(new Error(`Произошла ошибка ${req.body}`));
+      // }
     });
 };
 
@@ -71,16 +71,17 @@ const createUser = async (req, res, next) => {
             },
           });
         })
-        .catch((error) => {
-          if (error.name === 'ValidationError') {
-            next(new BadRequestErr('Неверные данные'));
-            return;
-          }
-          if (error.code === 11000) {
-            next(new ConflictErr('Пользователь с такими e-mail уже существует'));
-          } else {
-            next(new Error(`Произошла ошибка ${req.body}`));
-          }
+        .catch((err) => {
+          next(err);
+          // if (err.name === 'ValidationError') {
+          //   next(new BadRequestErr('Неверные данные'));
+          //   return;
+          // }
+          // if (err.code === 11000) {
+          //   next(new ConflictErr('Пользователь с такими e-mail уже существует'));
+          // } else {
+          //   next(err);
+          // }
         });
     });
 };
@@ -89,20 +90,22 @@ const patchUser = async (req, res, next) => {
   const userId = req.user._id;
   const { name, about } = req.body;
 
-  User.findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
+  return User.findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
     .then((user) => {
-      if (user) res.send(user);
-      if (!user) {
+      if (user) {
+        res.send(user);
+      } else {
         next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        next(new BadRequestErr('Неверные данные'));
-      } else {
-        next(new Error(`Произошла ошибка ${req.body}`));
-      }
-    });
+    .catch((e) => next(e));
+  // (error) => {
+  // if (error.name === 'ValidationError') {
+  //   next(new BadRequestErr('Неверные данные'));
+  // } else {
+  //   next(err);
+  // }    }
+  // );
 };
 const patchUserAvatar = (req, res, next) => {
   const userId = req.user._id;
@@ -115,13 +118,15 @@ const patchUserAvatar = (req, res, next) => {
         next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        next(new BadRequestErr('Неверные данные'));
-      } else {
-        next(new Error(`Произошла ошибка ${req.body}`));
-      }
-    });
+    .catch((e) => next(e));
+  // (error) => {
+  //   if (error.name === 'CastError') {
+  //     next(new BadRequestErr('Неверные данные'));
+  //   } else {
+  //     next(error);
+  //   }
+  // }
+  // );
 };
 
 const login = (req, res, next) => {
@@ -129,12 +134,10 @@ const login = (req, res, next) => {
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_KEY_SECRET, { expiresIn: '7d' });
-      res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 }).send({ jwt: token });
+      res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 });
+      // .send({ jwt: token });
     })
-    .catch(() => {
-      // ошибка аутентификации
-      next(new UnauthorizedErr('Необходима авторизация'));
-    });
+    .catch((e) => next(e));
 };
 module.exports = {
   createUser, getUsers, getUserId, patchUser, patchUserAvatar, login, getUserMe,
