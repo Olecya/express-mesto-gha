@@ -3,10 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
 const { JWT_KEY_SECRET } = require('../utils/config');
-// const BadRequestErr = require('../errors/BadRequestErr');
-// const UnauthorizedErr = require('../errors/UnauthorizedErr');
 const NotFoundErr = require('../errors/NotFoundErr');
-// const ConflictErr = require('../errors/ConflictErr');
 
 const idUser = (r) => {
   const { userId } = r.params;
@@ -28,13 +25,6 @@ const getUserId = async (req, res, next) => User.findById(idUser(req))
     }
   })
   .catch((e) => next(e));
-// (error) => {
-//   if (error.name === 'CastError') {
-//     next(new BadRequestErr('Неверные данные'));
-//   } else {
-//     next(error);
-//   }
-// }
 
 const getUserMe = async (req, res, next) => {
   User.findById(req.user._id)
@@ -44,14 +34,7 @@ const getUserMe = async (req, res, next) => {
         next(new NotFoundErr('Запрашиваемый пользователь не найден'));
       }
     })
-    .catch((err) => {
-      next(err);
-      // if (error.name === 'CastError') {
-      //   next(new BadRequestErr('Неверные данные'));
-      // } else {
-      //   next(new Error(`Произошла ошибка ${req.body}`));
-      // }
-    });
+    .catch((err) => next(err));
 };
 
 const createUser = async (req, res, next) => {
@@ -73,15 +56,6 @@ const createUser = async (req, res, next) => {
         })
         .catch((err) => {
           next(err);
-          // if (err.name === 'ValidationError') {
-          //   next(new BadRequestErr('Неверные данные'));
-          //   return;
-          // }
-          // if (err.code === 11000) {
-          //   next(new ConflictErr('Пользователь с такими e-mail уже существует'));
-          // } else {
-          //   next(err);
-          // }
         });
     });
 };
@@ -99,14 +73,8 @@ const patchUser = async (req, res, next) => {
       }
     })
     .catch((e) => next(e));
-  // (error) => {
-  // if (error.name === 'ValidationError') {
-  //   next(new BadRequestErr('Неверные данные'));
-  // } else {
-  //   next(err);
-  // }    }
-  // );
 };
+
 const patchUserAvatar = (req, res, next) => {
   const userId = req.user._id;
   const { avatar } = req.body;
@@ -119,14 +87,6 @@ const patchUserAvatar = (req, res, next) => {
       }
     })
     .catch((e) => next(e));
-  // (error) => {
-  //   if (error.name === 'CastError') {
-  //     next(new BadRequestErr('Неверные данные'));
-  //   } else {
-  //     next(error);
-  //   }
-  // }
-  // );
 };
 
 const login = (req, res, next) => {
@@ -135,7 +95,6 @@ const login = (req, res, next) => {
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_KEY_SECRET, { expiresIn: '7d' });
       res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 * 24 * 7 });
-      // .send({ jwt: token });
     })
     .catch((e) => next(e));
 };

@@ -27,18 +27,17 @@ app.use('/', router);
 app.use(errors());
 app.use((err, req, res, next) => {
   let error = err;
-  let { statusCode, message } = error;
   if (err.name === 'ValidationError' || err.name === 'CastError') {
     error = new BadRequestErr('Неверные данные запроса');
   }
   if (err.code === 11000) {
     error = new ConflictErr('Пользователь с такими e-mail уже существует');
   }
-  if (statusCode === 500 || !statusCode) {
-    statusCode = 500;
-    message = 'Произошла ошибка сервера';
+  if (error.statusCode === 500 || !error.statusCode) {
+    error.statusCode = 500;
+    error.message = 'Произошла ошибка сервера';
   }
-  res.status(statusCode).send({ message });
+  res.status(error.statusCode).send(error.message);
   next();
 });
 

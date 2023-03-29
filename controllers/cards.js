@@ -17,14 +17,8 @@ const createCard = async (req, res, next) => {
   return Card.create({ name, link, owner })
     .then((r) => res.status(201).send(r))
     .catch((e) => next(e));
-  // (error) => {
-  //   if (error.name === 'ValidationError') {
-  //     next(new BadRequestErr('Неверные данные'));
-  //   } else {
-  //     next(new Error('Произошла ошибка сервера'));
-  //   }
-  // }
 };
+
 const deleteCard = async (req, res, next) => {
   const userId = req.user._id;
   const { cardId } = req.params;
@@ -39,7 +33,7 @@ const deleteCard = async (req, res, next) => {
           .then(() => {
             res.send({ data: card });
           })
-          .catch((e) => next(e)); // () => next(new Error('Произошла ошибка сервера'))
+          .catch((e) => next(e));
       } else {
         next(new ForbiddenErr('Неверный пользователь'));
       }
@@ -96,7 +90,6 @@ const deleteCardLike = async (req, res, next) => {
         next(new BadRequestErr(`Неверные данные ${cardId}`));
       } else {
         next(error);
-        // next(new Error('Произошла ошибка сервера'));
       }
     });
 };
