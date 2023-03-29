@@ -37,7 +37,8 @@ app.use((err, req, res, next) => {
     error.statusCode = 500;
     error.message = 'Произошла ошибка сервера';
   }
-  res.status(error.statusCode).send(error.message);
+  const massageErr = error.message
+  res.status(error.statusCode).send({massageErr});
   next();
 });
 
