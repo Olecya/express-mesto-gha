@@ -32,13 +32,15 @@ app.use((err, req, res, next) => {
   }
   if (err.code === 11000) {
     error = new ConflictErr('Пользователь с такими e-mail уже существует');
+    console.log(error.message);
+    console.log(error.statusCode);
   }
   if (error.statusCode === 500 || !error.statusCode) {
     error.statusCode = 500;
     error.message = 'Произошла ошибка сервера';
   }
-  const { massage } = error;
-  res.status(error.statusCode).send({ massage });
+
+  res.status(error.statusCode).send({ message: error.message });
   next();
 });
 
