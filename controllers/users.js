@@ -5,26 +5,24 @@ const User = require('../models/user');
 const { JWT_KEY_SECRET } = require('../utils/config');
 const NotFoundErr = require('../errors/NotFoundErr');
 
-const idUser = (r) => {
-  const { userId } = r.params;
-  return userId;
-};
-
 const getUsers = async (req, res, next) => User.find({})
   .then((users) => {
     res.send(users);
   })
   .catch((e) => next(e));
 
-const getUserId = async (req, res, next) => User.findById(idUser(req))
-  .then((user) => {
-    if (user) {
-      res.send(user);
-    } else {
-      next(new NotFoundErr('Запрашиваемый пользователь не найден'));
-    }
-  })
-  .catch((e) => next(e));
+const getUserId = async (req, res, next) => {
+  const { userId } = req.params;
+  User.findById(userId)
+    .then((user) => {
+      if (user) {
+        res.send(user);
+      } else {
+        next(new NotFoundErr('Запрашиваемый пользователь не найден'));
+      }
+    })
+    .catch((e) => next(e));
+};
 
 const getUserMe = async (req, res, next) => {
   User.findById(req.user._id)
